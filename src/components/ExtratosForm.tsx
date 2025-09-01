@@ -108,7 +108,11 @@ export const ExtratosForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Form submission started');
+    console.log('Form data:', formData);
+    
     if (!validateForm()) {
+      console.log('Form validation failed');
       return;
     }
 
@@ -119,9 +123,13 @@ export const ExtratosForm = () => {
       
       // Add files
       if (formData.files) {
+        console.log('Adding files to FormData:', formData.files.length, 'files');
         Array.from(formData.files).forEach((file, index) => {
+          console.log(`Adding file ${index}:`, file.name, file.size, 'bytes');
           formDataToSend.append(`file_${index}`, file);
         });
+      } else {
+        console.log('No files to add');
       }
 
       // Add other form data
@@ -129,11 +137,16 @@ export const ExtratosForm = () => {
       formDataToSend.append('tipos', JSON.stringify(formData.tipos));
       formDataToSend.append('instituicao', formData.instituicao);
       formDataToSend.append('competencia', formData.competencia);
+      
+      console.log('Sending request to webhook...');
 
       const response = await fetch('https://workflows.snowealth.com.br/webhook-test/extrato', {
         method: 'POST',
         body: formDataToSend,
       });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
 
       if (response.ok) {
         toast({

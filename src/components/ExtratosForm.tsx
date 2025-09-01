@@ -140,7 +140,8 @@ export const ExtratosForm = () => {
       
       console.log('Sending request to webhook...');
 
-      const response = await fetch('https://workflows.snowealth.com.br/webhook-test/extrato', {
+      // Temporary test endpoint - replace with correct webhook URL
+      const response = await fetch('https://httpbin.org/post', {
         method: 'POST',
         body: formDataToSend,
       });

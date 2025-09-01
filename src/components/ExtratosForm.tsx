@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "./FileUpload";
 import { InstitutionSelect } from "./InstitutionSelect";
 import { CompetenceInput } from "./CompetenceInput";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FormData {
   files: FileList | null;
@@ -24,14 +25,6 @@ interface FormErrors {
   instituicao?: string;
 }
 
-// Mock client data - this will be replaced with Supabase data
-const mockClients = [
-  "Cliente A",
-  "Cliente B", 
-  "Cliente C",
-  "Cliente D"
-];
-
 export const ExtratosForm = () => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<FormData>({
@@ -43,6 +36,42 @@ export const ExtratosForm = () => {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clientes, setClientes] = useState<string[]>([]);
+  const [loadingClientes, setLoadingClientes] = useState(true);
+
+  useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_unique_clients');
+        
+        if (error) {
+          console.error('Error fetching clients:', error);
+          toast({
+            title: "Erro",
+            description: "Erro ao carregar clientes.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (data) {
+          const clienteNames = data.map((item: any) => item.Cliente).filter(Boolean);
+          setClientes(clienteNames);
+        }
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar clientes.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingClientes(false);
+      }
+    };
+
+    fetchClientes();
+  }, [toast]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -157,12 +186,12 @@ export const ExtratosForm = () => {
                 <Label htmlFor="cliente" className="text-sm font-medium text-foreground">
                   Clientes <span className="text-primary">*</span>
                 </Label>
-                <Select value={formData.cliente} onValueChange={(value) => setFormData(prev => ({ ...prev, cliente: value }))}>
+                <Select value={formData.cliente} onValueChange={(value) => setFormData(prev => ({ ...prev, cliente: value }))} disabled={loadingClientes}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an option..." />
+                    <SelectValue placeholder={loadingClientes ? "Carregando..." : "Select an option..."} />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockClients.map((client) => (
+                    {clientes.map((client) => (
                       <SelectItem key={client} value={client}>
                         {client}
                       </SelectItem>

@@ -151,6 +151,9 @@ export const ExtratosForm = () => {
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
 
+      const responseText = await response.text();
+      console.log('Response body:', responseText);
+
       if (response.ok) {
         toast({
           title: "Sucesso!",
@@ -167,12 +170,23 @@ export const ExtratosForm = () => {
         });
         setErrors({});
       } else {
-        throw new Error('Erro no envio');
+        console.error('HTTP Error:', response.status, response.statusText);
+        throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
       }
     } catch (error) {
+      console.error('Fetch error details:', error);
+      
+      let errorMessage = "Erro ao enviar formulário. Tente novamente.";
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = "Erro de conectividade. Verifique sua conexão com a internet ou tente novamente.";
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erro",
-        description: "Erro ao enviar formulário. Tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

@@ -126,7 +126,7 @@ export const ExtratosForm = () => {
         console.log('Adding files to FormData:', formData.files.length, 'files');
         Array.from(formData.files).forEach((file, index) => {
           console.log(`Adding file ${index}:`, file.name, file.size, 'bytes');
-          formDataToSend.append(`file_${index}`, file);
+          formDataToSend.append('data', file);
           formDataToSend.append(`filename_${index}`, file.name);
           formDataToSend.append(`mimetype_${index}`, file.type);
           formDataToSend.append(`size_${index}`, file.size.toString());

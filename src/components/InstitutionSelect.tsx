@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings } from "lucide-react";
 import { InstitutionModal } from "./InstitutionModal";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Institution {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface InstitutionSelectProps {
   value: string;
@@ -11,25 +19,30 @@ interface InstitutionSelectProps {
   error?: string;
 }
 
-const defaultInstitutions = [
-  "XP",
-  "BTG", 
-  "Santander",
-  "Itau",
-  "BB",
-  "Smart",
-  "Warren",
-  "C6",
-  "XP Performance",
-  "IB"
-];
-
 export const InstitutionSelect = ({ value, onValueChange, error }: InstitutionSelectProps) => {
-  const [institutions, setInstitutions] = useState<string[]>(defaultInstitutions);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleInstitutionsUpdate = (newInstitutions: string[]) => {
-    setInstitutions(newInstitutions);
+  useEffect(() => {
+    fetchInstitutions();
+  }, []);
+
+  const fetchInstitutions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('institutions')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setInstitutions(data || []);
+    } catch (error) {
+      console.error('Error fetching institutions:', error);
+    }
+  };
+
+  const handleInstitutionsUpdate = () => {
+    fetchInstitutions();
   };
 
   return (
@@ -44,8 +57,8 @@ export const InstitutionSelect = ({ value, onValueChange, error }: InstitutionSe
           </SelectTrigger>
           <SelectContent>
             {institutions.map((institution) => (
-              <SelectItem key={institution} value={institution}>
-                {institution}
+              <SelectItem key={institution.id} value={institution.name}>
+                {institution.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -64,7 +77,6 @@ export const InstitutionSelect = ({ value, onValueChange, error }: InstitutionSe
       <InstitutionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        institutions={institutions}
         onUpdate={handleInstitutionsUpdate}
       />
     </div>

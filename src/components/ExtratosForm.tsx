@@ -27,6 +27,7 @@ interface FormErrors {
 
 export const ExtratosForm = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
     files: null,
     cliente: "",
@@ -155,23 +156,12 @@ export const ExtratosForm = () => {
       console.log('Response body:', responseText);
 
       if (response.ok) {
-        toast({
-          title: "Sucesso!",
-          description: "Formulário enviado com sucesso.",
-        });
-        
-        // Reset form
-        setFormData({
-          files: null,
-          cliente: "",
-          tipos: [],
-          instituicao: "",
-          competencia: "",
-        });
-        setErrors({});
+        // Navigate to success page
+        navigate('/result?success=true&message=' + encodeURIComponent('Formulário enviado com sucesso!'));
       } else {
         console.error('HTTP Error:', response.status, response.statusText);
-        throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+        navigate('/result?success=false&message=' + encodeURIComponent(`Erro HTTP: ${response.status} - ${response.statusText}`));
+        return;
       }
     } catch (error) {
       console.error('Fetch error details:', error);
@@ -184,11 +174,7 @@ export const ExtratosForm = () => {
         errorMessage = error.message;
       }
       
-      toast({
-        title: "Erro",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      navigate('/result?success=false&message=' + encodeURIComponent(errorMessage));
     } finally {
       setIsSubmitting(false);
     }

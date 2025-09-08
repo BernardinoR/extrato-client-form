@@ -51,7 +51,7 @@ export const InstitutionSelect = ({ value, onValueChange, error }: InstitutionSe
         Instituição <span className="text-primary">*</span>
       </Label>
       <div className="flex items-center gap-2">
-        <Select value={value} onValueChange={onValueChange}>
+        <Select value={typeof value === 'string' ? value : ''} onValueChange={onValueChange}>
           <SelectTrigger className="flex-1">
             <SelectValue placeholder="Select an option..." />
           </SelectTrigger>

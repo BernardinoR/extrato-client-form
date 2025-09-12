@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "./FileUpload";
 import { InstitutionSelect } from "./InstitutionSelect";
@@ -40,6 +44,7 @@ export const ExtratosForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clientes, setClientes] = useState<string[]>([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
+  const [clientePopoverOpen, setClientePopoverOpen] = useState(false);
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -203,18 +208,53 @@ export const ExtratosForm = () => {
                 <Label htmlFor="cliente" className="text-sm font-medium text-foreground">
                   Clientes <span className="text-primary">*</span>
                 </Label>
-                <Select value={formData.cliente} onValueChange={(value) => setFormData(prev => ({ ...prev, cliente: value }))} disabled={loadingClientes}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={loadingClientes ? "Carregando..." : "Select an option..."} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((client) => (
-                      <SelectItem key={client} value={client}>
-                        {client}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={clientePopoverOpen} onOpenChange={setClientePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={clientePopoverOpen}
+                      className="w-full justify-between"
+                      disabled={loadingClientes}
+                    >
+                      {formData.cliente 
+                        ? clientes.find((client) => client === formData.cliente)
+                        : loadingClientes ? "Carregando..." : "Select an option..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Procurar cliente..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {clientes.map((client) => (
+                            <CommandItem
+                              key={client}
+                              value={client}
+                              onSelect={(currentValue) => {
+                                setFormData(prev => ({ 
+                                  ...prev, 
+                                  cliente: currentValue === formData.cliente ? "" : currentValue 
+                                }));
+                                setClientePopoverOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.cliente === client ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {client}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {errors.cliente && <p className="text-destructive text-sm">{errors.cliente}</p>}
               </div>
 

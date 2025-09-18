@@ -20,6 +20,7 @@ interface FormData {
   cliente: string;
   tipos: string[];
   instituicao: string;
+  moeda: string;
   competencia: string;
 }
 
@@ -38,6 +39,7 @@ export const ExtratosForm = () => {
     cliente: "",
     tipos: [],
     instituicao: "",
+    moeda: "Real",
     competencia: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -146,6 +148,7 @@ export const ExtratosForm = () => {
       formDataToSend.append('cliente', formData.cliente);
       formDataToSend.append('tipos', JSON.stringify(formData.tipos));
       formDataToSend.append('instituicao', formData.instituicao);
+      formDataToSend.append('moeda', formData.moeda);
       formDataToSend.append('competencia', formData.competencia);
       
       console.log('Sending request to webhook...');
@@ -286,6 +289,23 @@ export const ExtratosForm = () => {
                 onValueChange={(value) => setFormData(prev => ({ ...prev, instituicao: value }))}
                 error={errors.instituicao}
               />
+
+              {/* Moeda Select */}
+              <div className="space-y-2">
+                <Label htmlFor="moeda" className="text-sm font-medium text-foreground">
+                  Moeda
+                </Label>
+                <Select value={formData.moeda} onValueChange={(value) => setFormData(prev => ({ ...prev, moeda: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a moeda" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Real">Real (BRL)</SelectItem>
+                    <SelectItem value="Dolar">Dólar (USD)</SelectItem>
+                    <SelectItem value="Euro">Euro (EUR)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Competence Input */}
               <CompetenceInput

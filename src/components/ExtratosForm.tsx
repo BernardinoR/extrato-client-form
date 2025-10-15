@@ -181,12 +181,11 @@ export const ExtratosForm = () => {
       if (selectedInstitutionRequiresFile && formData.arquivoAdicional) {
         console.log('Adding additional files to FormData:', formData.arquivoAdicional.length, 'files');
         Array.from(formData.arquivoAdicional).forEach((file, index) => {
-          const adjustedIndex = (formData.files?.length || 0) + index;
-          console.log(`Adding additional file ${adjustedIndex}:`, file.name, file.size, 'bytes');
-          formDataToSend.append('data', file);
-          formDataToSend.append(`filename_${adjustedIndex}`, file.name);
-          formDataToSend.append(`mimetype_${adjustedIndex}`, file.type);
-          formDataToSend.append(`size_${adjustedIndex}`, file.size.toString());
+          console.log(`Adding additional file ${index}:`, file.name, file.size, 'bytes');
+          formDataToSend.append('adicional', file);
+          formDataToSend.append(`filename_adicional_${index}`, file.name);
+          formDataToSend.append(`mimetype_adicional_${index}`, file.type);
+          formDataToSend.append(`size_adicional_${index}`, file.size.toString());
         });
       }
 

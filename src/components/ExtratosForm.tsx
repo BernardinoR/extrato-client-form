@@ -23,7 +23,6 @@ interface FormData {
   instituicao: string;
   moeda: string;
   competencia: string;
-  incluirArquivoAdicional: boolean;
   arquivoAdicional: FileList | null;
   dataArquivoAdicional: string;
 }
@@ -45,7 +44,6 @@ export const ExtratosForm = () => {
     instituicao: "",
     moeda: "Real",
     competencia: "",
-    incluirArquivoAdicional: false,
     arquivoAdicional: null,
     dataArquivoAdicional: "",
   });
@@ -54,6 +52,7 @@ export const ExtratosForm = () => {
   const [clientes, setClientes] = useState<string[]>([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
   const [clientePopoverOpen, setClientePopoverOpen] = useState(false);
+  const [selectedInstitutionRequiresFile, setSelectedInstitutionRequiresFile] = useState(false);
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -88,6 +87,35 @@ export const ExtratosForm = () => {
 
     fetchClientes();
   }, [toast]);
+
+  // Check if selected institution requires additional file
+  useEffect(() => {
+    const checkInstitution = async () => {
+      if (!formData.instituicao) {
+        setSelectedInstitutionRequiresFile(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('institutions')
+          .select('requires_additional_file')
+          .eq('name', formData.instituicao)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking institution:', error);
+          return;
+        }
+
+        setSelectedInstitutionRequiresFile(data?.requires_additional_file || false);
+      } catch (error) {
+        console.error('Error checking institution:', error);
+      }
+    };
+
+    checkInstitution();
+  }, [formData.instituicao]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -151,8 +179,8 @@ export const ExtratosForm = () => {
         console.log('No files to add');
       }
 
-      // Add additional files if checkbox is enabled
-      if (formData.incluirArquivoAdicional && formData.arquivoAdicional) {
+      // Add additional files if institution requires it
+      if (selectedInstitutionRequiresFile && formData.arquivoAdicional) {
         console.log('Adding additional files to FormData:', formData.arquivoAdicional.length, 'files');
         Array.from(formData.arquivoAdicional).forEach((file, index) => {
           const adjustedIndex = (formData.files?.length || 0) + index;
@@ -311,22 +339,8 @@ export const ExtratosForm = () => {
                 error={errors.instituicao}
               />
 
-              {/* Checkbox para arquivo adicional */}
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="incluirArquivoAdicional"
-                  checked={formData.incluirArquivoAdicional}
-                  onCheckedChange={(checked) => 
-                    setFormData(prev => ({ ...prev, incluirArquivoAdicional: checked as boolean }))
-                  }
-                />
-                <Label htmlFor="incluirArquivoAdicional" className="text-sm font-normal cursor-pointer">
-                  Incluir arquivo adicional
-                </Label>
-              </div>
-
-              {/* Campo adicional quando checkbox está habilitado */}
-              {formData.incluirArquivoAdicional && (
+              {/* Campo adicional quando instituição requer arquivo adicional */}
+              {selectedInstitutionRequiresFile && (
                 <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
                   <div className="space-y-2">
                     <Label htmlFor="arquivo-adicional" className="text-sm font-medium text-foreground">

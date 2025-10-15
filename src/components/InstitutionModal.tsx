@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Edit, Plus, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,7 @@ interface Institution {
   name: string;
   created_at: string;
   updated_at: string;
+  requires_additional_file: boolean;
 }
 
 interface InstitutionModalProps {
@@ -23,8 +25,10 @@ interface InstitutionModalProps {
 export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModalProps) => {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [newInstitution, setNewInstitution] = useState("");
+  const [newRequiresFile, setNewRequiresFile] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
+  const [editingRequiresFile, setEditingRequiresFile] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -60,7 +64,10 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
     try {
       const { data, error } = await supabase
         .from('institutions')
-        .insert([{ name: newInstitution.trim() }])
+        .insert([{ 
+          name: newInstitution.trim(),
+          requires_additional_file: newRequiresFile
+        }])
         .select()
         .single();
 
@@ -68,6 +75,7 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
       
       setInstitutions([...institutions, data]);
       setNewInstitution("");
+      setNewRequiresFile(false);
       toast({
         title: "Sucesso",
         description: "Instituição adicionada com sucesso!",
@@ -116,6 +124,7 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
   const handleEdit = (institution: Institution) => {
     setEditingId(institution.id);
     setEditingValue(institution.name);
+    setEditingRequiresFile(institution.requires_additional_file);
   };
 
   const handleSaveEdit = async () => {
@@ -125,7 +134,10 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
     try {
       const { data, error } = await supabase
         .from('institutions')
-        .update({ name: editingValue.trim() })
+        .update({ 
+          name: editingValue.trim(),
+          requires_additional_file: editingRequiresFile
+        })
         .eq('id', editingId)
         .select()
         .single();
@@ -137,6 +149,7 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
       ));
       setEditingId(null);
       setEditingValue("");
+      setEditingRequiresFile(false);
       toast({
         title: "Sucesso",
         description: "Instituição atualizada com sucesso!",
@@ -158,6 +171,7 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditingValue("");
+    setEditingRequiresFile(false);
   };
 
   const handleSave = () => {
@@ -188,38 +202,68 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="new-requires-file"
+                checked={newRequiresFile}
+                onCheckedChange={(checked) => setNewRequiresFile(checked as boolean)}
+              />
+              <Label htmlFor="new-requires-file" className="text-sm font-normal cursor-pointer">
+                Requer arquivo adicional
+              </Label>
+            </div>
           </div>
 
           {/* List of institutions */}
           <div className="space-y-2 max-h-60 overflow-y-auto">
             <Label>Instituições Atuais</Label>
             {institutions.map((institution) => (
-              <div key={institution.id} className="flex items-center gap-2 p-2 border rounded">
+              <div key={institution.id} className="space-y-2 p-2 border rounded">
                 {editingId === institution.id ? (
                   <>
-                    <Input
-                      value={editingValue}
-                      onChange={(e) => setEditingValue(e.target.value)}
-                      className="flex-1"
-                      onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                      disabled={loading}
-                    />
-                    <Button size="sm" variant="ghost" onClick={handleSaveEdit} disabled={loading}>
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={handleCancelEdit} disabled={loading}>
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editingValue}
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        className="flex-1"
+                        onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                        disabled={loading}
+                      />
+                      <Button size="sm" variant="ghost" onClick={handleSaveEdit} disabled={loading}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={handleCancelEdit} disabled={loading}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center space-x-2 pl-2">
+                      <Checkbox
+                        id={`edit-requires-file-${institution.id}`}
+                        checked={editingRequiresFile}
+                        onCheckedChange={(checked) => setEditingRequiresFile(checked as boolean)}
+                        disabled={loading}
+                      />
+                      <Label htmlFor={`edit-requires-file-${institution.id}`} className="text-sm font-normal cursor-pointer">
+                        Requer arquivo adicional
+                      </Label>
+                    </div>
                   </>
                 ) : (
                   <>
-                    <span className="flex-1">{institution.name}</span>
-                    <Button size="sm" variant="ghost" onClick={() => handleEdit(institution)} disabled={loading}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(institution.id)} disabled={loading}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 space-y-1">
+                        <span className="block">{institution.name}</span>
+                        {institution.requires_additional_file && (
+                          <span className="text-xs text-muted-foreground">Requer arquivo adicional</span>
+                        )}
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(institution)} disabled={loading}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(institution.id)} disabled={loading}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </>
                 )}
               </div>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -22,6 +23,9 @@ interface FormData {
   instituicao: string;
   moeda: string;
   competencia: string;
+  incluirArquivoAdicional: boolean;
+  arquivoAdicional: FileList | null;
+  dataArquivoAdicional: string;
 }
 
 interface FormErrors {
@@ -41,6 +45,9 @@ export const ExtratosForm = () => {
     instituicao: "",
     moeda: "Real",
     competencia: "",
+    incluirArquivoAdicional: false,
+    arquivoAdicional: null,
+    dataArquivoAdicional: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -142,6 +149,20 @@ export const ExtratosForm = () => {
         });
       } else {
         console.log('No files to add');
+      }
+
+      // Add additional files if checkbox is enabled
+      if (formData.incluirArquivoAdicional && formData.arquivoAdicional) {
+        console.log('Adding additional files to FormData:', formData.arquivoAdicional.length, 'files');
+        Array.from(formData.arquivoAdicional).forEach((file, index) => {
+          const adjustedIndex = (formData.files?.length || 0) + index;
+          console.log(`Adding additional file ${adjustedIndex}:`, file.name, file.size, 'bytes');
+          formDataToSend.append('data', file);
+          formDataToSend.append(`filename_${adjustedIndex}`, file.name);
+          formDataToSend.append(`mimetype_${adjustedIndex}`, file.type);
+          formDataToSend.append(`size_${adjustedIndex}`, file.size.toString());
+        });
+        formDataToSend.append('dataArquivoAdicional', formData.dataArquivoAdicional);
       }
 
       // Add other form data
@@ -289,6 +310,67 @@ export const ExtratosForm = () => {
                 onValueChange={(value) => setFormData(prev => ({ ...prev, instituicao: value }))}
                 error={errors.instituicao}
               />
+
+              {/* Checkbox para arquivo adicional */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="incluirArquivoAdicional"
+                  checked={formData.incluirArquivoAdicional}
+                  onCheckedChange={(checked) => 
+                    setFormData(prev => ({ ...prev, incluirArquivoAdicional: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="incluirArquivoAdicional" className="text-sm font-normal cursor-pointer">
+                  Incluir arquivo adicional
+                </Label>
+              </div>
+
+              {/* Campo adicional quando checkbox está habilitado */}
+              {formData.incluirArquivoAdicional && (
+                <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+                  <div className="space-y-2">
+                    <Label htmlFor="arquivo-adicional" className="text-sm font-medium text-foreground">
+                      Arquivo Adicional
+                    </Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="arquivo-adicional"
+                        type="file"
+                        multiple
+                        onChange={(e) => setFormData(prev => ({ ...prev, arquivoAdicional: e.target.files }))}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => document.getElementById("arquivo-adicional")?.click()}
+                        className="border border-input"
+                      >
+                        Escolher arquivos
+                      </Button>
+                      <span className="text-muted-foreground text-sm">
+                        {formData.arquivoAdicional && formData.arquivoAdicional.length > 0
+                          ? formData.arquivoAdicional.length === 1
+                            ? formData.arquivoAdicional[0].name
+                            : `${formData.arquivoAdicional.length} arquivos selecionados`
+                          : "Nenhum arquivo escolhido"}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="dataArquivoAdicional" className="text-sm font-medium text-foreground">
+                      Data do Arquivo Adicional
+                    </Label>
+                    <Input
+                      type="date"
+                      id="dataArquivoAdicional"
+                      value={formData.dataArquivoAdicional}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dataArquivoAdicional: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Moeda Select */}
               <div className="space-y-2">

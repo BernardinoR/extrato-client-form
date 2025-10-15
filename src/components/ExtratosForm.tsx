@@ -24,7 +24,6 @@ interface FormData {
   moeda: string;
   competencia: string;
   arquivoAdicional: FileList | null;
-  dataArquivoAdicional: string;
 }
 
 interface FormErrors {
@@ -45,7 +44,6 @@ export const ExtratosForm = () => {
     moeda: "Real",
     competencia: "",
     arquivoAdicional: null,
-    dataArquivoAdicional: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -190,7 +188,6 @@ export const ExtratosForm = () => {
           formDataToSend.append(`mimetype_${adjustedIndex}`, file.type);
           formDataToSend.append(`size_${adjustedIndex}`, file.size.toString());
         });
-        formDataToSend.append('dataArquivoAdicional', formData.dataArquivoAdicional);
       }
 
       // Add other form data
@@ -370,18 +367,6 @@ export const ExtratosForm = () => {
                           : "Nenhum arquivo escolhido"}
                       </span>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="dataArquivoAdicional" className="text-sm font-medium text-foreground">
-                      Data do Arquivo Adicional
-                    </Label>
-                    <Input
-                      type="date"
-                      id="dataArquivoAdicional"
-                      value={formData.dataArquivoAdicional}
-                      onChange={(e) => setFormData(prev => ({ ...prev, dataArquivoAdicional: e.target.value }))}
-                    />
                   </div>
                 </div>
               )}

@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "./FileUpload";
@@ -19,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface FormData {
   files: FileList | null;
   cliente: string;
+  nomeConta: string;
   tipos: string[];
   instituicao: string;
   moeda: string;
@@ -39,6 +41,7 @@ export const ExtratosForm = () => {
   const [formData, setFormData] = useState<FormData>({
     files: null,
     cliente: "",
+    nomeConta: "",
     tipos: [],
     instituicao: "",
     moeda: "Real",
@@ -191,6 +194,9 @@ export const ExtratosForm = () => {
 
       // Add other form data
       formDataToSend.append('cliente', formData.cliente);
+      if (formData.nomeConta) {
+        formDataToSend.append('nomeConta', formData.nomeConta);
+      }
       formDataToSend.append('tipos', JSON.stringify(formData.tipos));
       formDataToSend.append('instituicao', formData.instituicao);
       formDataToSend.append('moeda', formData.moeda);
@@ -304,6 +310,32 @@ export const ExtratosForm = () => {
                   </PopoverContent>
                 </Popover>
                 {errors.cliente && <p className="text-destructive text-sm">{errors.cliente}</p>}
+              </div>
+
+              {/* Nome da Conta */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="nomeConta" className="text-sm font-medium text-foreground">
+                    Nome da conta
+                  </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Esse campo é opcional, para definir o nome de uma conta da mesma instituição que deve ser consolidado, como conta do filho, da empresa, da esposa</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Input
+                  id="nomeConta"
+                  type="text"
+                  value={formData.nomeConta}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nomeConta: e.target.value }))}
+                  placeholder="Digite o nome da conta (opcional)"
+                />
               </div>
 
               {/* Tipo Checkboxes */}

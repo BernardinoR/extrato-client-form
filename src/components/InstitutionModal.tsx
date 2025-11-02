@@ -226,12 +226,12 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
               <Label htmlFor="new-default-currency" className="text-sm">
                 Moeda padrão (opcional)
               </Label>
-              <Select value={newDefaultCurrency} onValueChange={setNewDefaultCurrency}>
+              <Select value={newDefaultCurrency || "none"} onValueChange={(val) => setNewDefaultCurrency(val === "none" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a moeda padrão" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma (padrão: Real)</SelectItem>
+                  <SelectItem value="none">Nenhuma (padrão: Real)</SelectItem>
                   <SelectItem value="Real">Real (BRL)</SelectItem>
                   <SelectItem value="Dolar">Dólar (USD)</SelectItem>
                   <SelectItem value="Euro">Euro (EUR)</SelectItem>
@@ -277,12 +277,12 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
                       <Label htmlFor={`edit-currency-${institution.id}`} className="text-sm">
                         Moeda padrão
                       </Label>
-                      <Select value={editingDefaultCurrency} onValueChange={setEditingDefaultCurrency} disabled={loading}>
+                      <Select value={editingDefaultCurrency || "none"} onValueChange={(val) => setEditingDefaultCurrency(val === "none" ? "" : val)} disabled={loading}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a moeda padrão" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Nenhuma (padrão: Real)</SelectItem>
+                          <SelectItem value="none">Nenhuma (padrão: Real)</SelectItem>
                           <SelectItem value="Real">Real (BRL)</SelectItem>
                           <SelectItem value="Dolar">Dólar (USD)</SelectItem>
                           <SelectItem value="Euro">Euro (EUR)</SelectItem>

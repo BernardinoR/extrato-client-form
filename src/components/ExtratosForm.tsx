@@ -89,7 +89,7 @@ export const ExtratosForm = () => {
     fetchClientes();
   }, [toast]);
 
-  // Check if selected institution requires additional file
+  // Check if selected institution requires additional file and set default currency
   useEffect(() => {
     const checkInstitution = async () => {
       if (!formData.instituicao) {
@@ -100,7 +100,7 @@ export const ExtratosForm = () => {
       try {
         const { data, error } = await supabase
           .from('institutions')
-          .select('requires_additional_file')
+          .select('requires_additional_file, default_currency')
           .eq('name', formData.instituicao)
           .maybeSingle();
 
@@ -110,6 +110,14 @@ export const ExtratosForm = () => {
         }
 
         setSelectedInstitutionRequiresFile(data?.requires_additional_file || false);
+        
+        // Set default currency if the institution has one configured
+        if (data?.default_currency) {
+          setFormData(prev => ({ ...prev, moeda: data.default_currency }));
+        } else {
+          // If no default currency, set to Real
+          setFormData(prev => ({ ...prev, moeda: "Real" }));
+        }
       } catch (error) {
         console.error('Error checking institution:', error);
       }

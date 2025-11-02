@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Edit, Plus, Check, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,6 +15,7 @@ interface Institution {
   created_at: string;
   updated_at: string;
   requires_additional_file: boolean;
+  default_currency: string | null;
 }
 
 interface InstitutionModalProps {
@@ -26,9 +28,11 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [newInstitution, setNewInstitution] = useState("");
   const [newRequiresFile, setNewRequiresFile] = useState(false);
+  const [newDefaultCurrency, setNewDefaultCurrency] = useState<string>("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [editingRequiresFile, setEditingRequiresFile] = useState(false);
+  const [editingDefaultCurrency, setEditingDefaultCurrency] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -66,7 +70,8 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
         .from('institutions')
         .insert([{ 
           name: newInstitution.trim(),
-          requires_additional_file: newRequiresFile
+          requires_additional_file: newRequiresFile,
+          default_currency: newDefaultCurrency || null
         }])
         .select()
         .single();
@@ -76,6 +81,7 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
       setInstitutions([...institutions, data]);
       setNewInstitution("");
       setNewRequiresFile(false);
+      setNewDefaultCurrency("");
       toast({
         title: "Sucesso",
         description: "Instituição adicionada com sucesso!",
@@ -125,6 +131,7 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
     setEditingId(institution.id);
     setEditingValue(institution.name);
     setEditingRequiresFile(institution.requires_additional_file);
+    setEditingDefaultCurrency(institution.default_currency || "");
   };
 
   const handleSaveEdit = async () => {
@@ -136,7 +143,8 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
         .from('institutions')
         .update({ 
           name: editingValue.trim(),
-          requires_additional_file: editingRequiresFile
+          requires_additional_file: editingRequiresFile,
+          default_currency: editingDefaultCurrency || null
         })
         .eq('id', editingId)
         .select()
@@ -150,6 +158,7 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
       setEditingId(null);
       setEditingValue("");
       setEditingRequiresFile(false);
+      setEditingDefaultCurrency("");
       toast({
         title: "Sucesso",
         description: "Instituição atualizada com sucesso!",
@@ -172,6 +181,7 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
     setEditingId(null);
     setEditingValue("");
     setEditingRequiresFile(false);
+    setEditingDefaultCurrency("");
   };
 
   const handleSave = () => {
@@ -212,6 +222,22 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
                 Requer arquivo adicional
               </Label>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-default-currency" className="text-sm">
+                Moeda padrão (opcional)
+              </Label>
+              <Select value={newDefaultCurrency} onValueChange={setNewDefaultCurrency}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a moeda padrão" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma (padrão: Real)</SelectItem>
+                  <SelectItem value="Real">Real (BRL)</SelectItem>
+                  <SelectItem value="Dolar">Dólar (USD)</SelectItem>
+                  <SelectItem value="Euro">Euro (EUR)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* List of institutions */}
@@ -247,15 +273,38 @@ export const InstitutionModal = ({ isOpen, onClose, onUpdate }: InstitutionModal
                         Requer arquivo adicional
                       </Label>
                     </div>
+                    <div className="space-y-2 pl-2">
+                      <Label htmlFor={`edit-currency-${institution.id}`} className="text-sm">
+                        Moeda padrão
+                      </Label>
+                      <Select value={editingDefaultCurrency} onValueChange={setEditingDefaultCurrency} disabled={loading}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a moeda padrão" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhuma (padrão: Real)</SelectItem>
+                          <SelectItem value="Real">Real (BRL)</SelectItem>
+                          <SelectItem value="Dolar">Dólar (USD)</SelectItem>
+                          <SelectItem value="Euro">Euro (EUR)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </>
                 ) : (
                   <>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 space-y-1">
                         <span className="block">{institution.name}</span>
-                        {institution.requires_additional_file && (
-                          <span className="text-xs text-muted-foreground">Requer arquivo adicional</span>
-                        )}
+                        <div className="flex flex-col gap-0.5">
+                          {institution.requires_additional_file && (
+                            <span className="text-xs text-muted-foreground">Requer arquivo adicional</span>
+                          )}
+                          {institution.default_currency && (
+                            <span className="text-xs text-muted-foreground">
+                              Moeda padrão: {institution.default_currency === "Real" ? "Real (BRL)" : institution.default_currency === "Dolar" ? "Dólar (USD)" : "Euro (EUR)"}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <Button size="sm" variant="ghost" onClick={() => handleEdit(institution)} disabled={loading}>
                         <Edit className="h-4 w-4" />

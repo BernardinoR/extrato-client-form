@@ -31,10 +31,30 @@ const editUserSchema = z.object({
   fullName: z.string()
     .min(1, 'Nome não pode estar vazio')
     .max(100, 'Nome deve ter no máximo 100 caracteres'),
+  newPassword: z.string().optional(),
+  confirmPassword: z.string().optional(),
+}).refine((data) => {
+  if (data.newPassword && data.newPassword.length > 0) {
+    return data.newPassword.length >= 6;
+  }
+  return true;
+}, {
+  message: 'Senha deve ter no mínimo 6 caracteres',
+  path: ['newPassword'],
+}).refine((data) => {
+  if (data.newPassword && data.newPassword.length > 0) {
+    return data.newPassword === data.confirmPassword;
+  }
+  return true;
+}, {
+  message: 'As senhas não coincidem',
+  path: ['confirmPassword'],
 });
 
 export function EditUserDialog({ open, onOpenChange, user, onUserUpdated }: EditUserDialogProps) {
   const [fullName, setFullName] = useState(user?.full_name || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { toast } = useToast();
@@ -49,7 +69,11 @@ export function EditUserDialog({ open, onOpenChange, user, onUserUpdated }: Edit
 
     try {
       // Validate input
-      const validation = editUserSchema.safeParse({ fullName: fullName.trim() });
+      const validation = editUserSchema.safeParse({ 
+        fullName: fullName.trim(),
+        newPassword: newPassword,
+        confirmPassword: confirmPassword
+      });
       
       if (!validation.success) {
         setError(validation.error.errors[0].message);
@@ -65,9 +89,34 @@ export function EditUserDialog({ open, onOpenChange, user, onUserUpdated }: Edit
 
       if (updateError) throw updateError;
 
+      // Update password if provided
+      let passwordUpdated = false;
+      if (newPassword && newPassword.length > 0) {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          throw new Error('Sessão não encontrada');
+        }
+
+        const response = await supabase.functions.invoke('update-user-password', {
+          body: { 
+            userId: user.id, 
+            newPassword: newPassword 
+          },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Erro ao atualizar senha');
+        }
+
+        passwordUpdated = true;
+      }
+
       toast({
         title: 'Sucesso',
-        description: 'Usuário atualizado com sucesso',
+        description: passwordUpdated 
+          ? 'Usuário e senha atualizados com sucesso' 
+          : 'Usuário atualizado com sucesso',
       });
 
       onUserUpdated();
@@ -76,7 +125,7 @@ export function EditUserDialog({ open, onOpenChange, user, onUserUpdated }: Edit
       console.error('Error updating user:', err);
       toast({
         title: 'Erro',
-        description: 'Erro ao atualizar usuário',
+        description: err instanceof Error ? err.message : 'Erro ao atualizar usuário',
         variant: 'destructive',
       });
     } finally {
@@ -88,6 +137,8 @@ export function EditUserDialog({ open, onOpenChange, user, onUserUpdated }: Edit
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen && user) {
       setFullName(user.full_name || '');
+      setNewPassword('');
+      setConfirmPassword('');
       setError('');
     }
     onOpenChange(isOpen);
@@ -126,6 +177,31 @@ export function EditUserDialog({ open, onOpenChange, user, onUserUpdated }: Edit
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Digite o nome completo"
                 disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nova Senha (opcional)</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                disabled={loading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Deixe em branco para não alterar a senha
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Digite a senha novamente"
+                disabled={loading || !newPassword}
               />
               {error && (
                 <p className="text-sm text-destructive">{error}</p>

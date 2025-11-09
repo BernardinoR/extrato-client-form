@@ -7,11 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Shield, ShieldOff, UserPlus, Trash2, Users, UserCheck } from 'lucide-react';
+import { Shield, ShieldOff, UserPlus, Trash2, Users, UserCheck, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CreateUserDialog } from '@/components/CreateUserDialog';
 import { DeleteUserDialog } from '@/components/DeleteUserDialog';
+import { EditUserDialog } from '@/components/EditUserDialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface UserData {
@@ -28,6 +29,7 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
@@ -118,6 +120,11 @@ const UserManagement = () => {
   const handleDeleteClick = (user: UserData) => {
     setSelectedUser(user);
     setDeleteDialogOpen(true);
+  };
+
+  const handleEditClick = (user: UserData) => {
+    setSelectedUser(user);
+    setEditDialogOpen(true);
   };
 
   const filteredUsers = users.filter(
@@ -269,6 +276,13 @@ const UserManagement = () => {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => handleEditClick(user)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleDeleteClick(user)}
                           disabled={isSelf}
                         >
@@ -291,13 +305,21 @@ const UserManagement = () => {
       />
 
       {selectedUser && (
-        <DeleteUserDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          userId={selectedUser.id}
-          userName={selectedUser.full_name || selectedUser.email}
-          onUserDeleted={fetchUsers}
-        />
+        <>
+          <EditUserDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            user={selectedUser}
+            onUserUpdated={fetchUsers}
+          />
+          <DeleteUserDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            userId={selectedUser.id}
+            userName={selectedUser.full_name || selectedUser.email}
+            onUserDeleted={fetchUsers}
+          />
+        </>
       )}
     </div>
   );

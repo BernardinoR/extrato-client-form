@@ -172,6 +172,47 @@ export const ExtratosForm = () => {
     setIsSubmitting(true);
 
     try {
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Erro",
+          description: "Você precisa estar logado para enviar extratos.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', session.user.id)
+        .single();
+
+      // Create submission record
+      const { data: submission, error: submissionError } = await supabase
+        .from('submissions')
+        .insert({
+          user_id: session.user.id,
+          cliente: formData.cliente,
+          nome_conta: formData.nomeConta || null,
+          instituicao: formData.instituicao,
+          moeda: formData.moeda,
+          competencia: formData.competencia,
+          tipos: formData.tipos,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (submissionError) {
+        console.error('Error creating submission:', submissionError);
+        throw new Error('Erro ao criar registro de submissão');
+      }
+      
+
       const formDataToSend = new FormData();
       
       // Add files
@@ -210,6 +251,12 @@ export const ExtratosForm = () => {
       formDataToSend.append('moeda', formData.moeda);
       formDataToSend.append('competencia', formData.competencia);
       
+      // Add user information
+      formDataToSend.append('user_id', session.user.id);
+      formDataToSend.append('user_email', profile?.email || session.user.email || '');
+      formDataToSend.append('user_name', profile?.full_name || '');
+      formDataToSend.append('submission_id', submission.id);
+      
       console.log('Sending request to webhook...');
 
       const response = await fetch('https://webhooks.snowealth.com.br/webhook/extrato', {
@@ -224,9 +271,21 @@ export const ExtratosForm = () => {
       console.log('Response body:', responseText);
 
       if (response.ok) {
+        // Update submission status
+        await supabase
+          .from('submissions')
+          .update({ status: 'success', webhook_response: { status: response.status } })
+          .eq('id', submission.id);
+          
         // Navigate to success page
         navigate('/result?success=true&message=' + encodeURIComponent('Formulário enviado com sucesso!'));
       } else {
+        // Update submission status
+        await supabase
+          .from('submissions')
+          .update({ status: 'error', webhook_response: { status: response.status, error: response.statusText } })
+          .eq('id', submission.id);
+          
         console.error('HTTP Error:', response.status, response.statusText);
         navigate('/result?success=false&message=' + encodeURIComponent(`Erro HTTP: ${response.status} - ${response.statusText}`));
         return;
@@ -240,6 +299,29 @@ export const ExtratosForm = () => {
         errorMessage = "Erro de conectividade. Verifique sua conexão com a internet ou tente novamente.";
       } else if (error instanceof Error) {
         errorMessage = error.message;
+      }
+      
+      // Try to update submission status if we have the ID
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        try {
+          const { data: lastSubmission } = await supabase
+            .from('submissions')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+            
+          if (lastSubmission) {
+            await supabase
+              .from('submissions')
+              .update({ status: 'error', webhook_response: { error: errorMessage } })
+              .eq('id', lastSubmission.id);
+          }
+        } catch (e) {
+          console.error('Error updating submission status:', e);
+        }
       }
       
       navigate('/result?success=false&message=' + encodeURIComponent(errorMessage));

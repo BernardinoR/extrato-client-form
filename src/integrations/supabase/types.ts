@@ -383,6 +383,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       RAG_Processador: {
         Row: {
           Ativo: string | null
@@ -401,6 +425,69 @@ export type Database = {
           Classificacao?: string | null
           created_at?: string
           id?: number
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          cliente: string
+          competencia: string
+          created_at: string
+          id: string
+          instituicao: string
+          moeda: string
+          nome_conta: string | null
+          status: string | null
+          tipos: Json
+          user_id: string
+          webhook_response: Json | null
+        }
+        Insert: {
+          cliente: string
+          competencia: string
+          created_at?: string
+          id?: string
+          instituicao: string
+          moeda: string
+          nome_conta?: string | null
+          status?: string | null
+          tipos: Json
+          user_id: string
+          webhook_response?: Json | null
+        }
+        Update: {
+          cliente?: string
+          competencia?: string
+          created_at?: string
+          id?: string
+          instituicao?: string
+          moeda?: string
+          nome_conta?: string | null
+          status?: string | null
+          tipos?: Json
+          user_id?: string
+          webhook_response?: Json | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -425,6 +512,27 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_settings: {
+        Row: {
+          correct_threshold: number
+          id: number
+          tolerance_value: number
+          updated_at: string
+        }
+        Insert: {
+          correct_threshold?: number
+          id?: never
+          tolerance_value?: number
+          updated_at?: string
+        }
+        Update: {
+          correct_threshold?: number
+          id?: never
+          tolerance_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -437,6 +545,13 @@ export type Database = {
           "Meta de Retorno": string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       match_documents: {
         Args: { filter?: Json; match_count?: number; query_embedding: string }
         Returns: {
@@ -448,6 +563,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "user"
       tipo: "Supermarcado" | "Diversão" | "Saúde" | "Educação"
     }
     CompositeTypes: {
@@ -576,6 +692,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       tipo: ["Supermarcado", "Diversão", "Saúde", "Educação"],
     },
   },

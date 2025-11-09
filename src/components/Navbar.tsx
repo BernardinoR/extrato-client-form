@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, History, FileText } from 'lucide-react';
+import { LogOut, Users, History, FileText, Key } from 'lucide-react';
+import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
 
 export const Navbar = () => {
   const { profile, isAdmin, signOut } = useAuth();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   return (
     <nav className="border-b border-border bg-card">
@@ -43,6 +46,14 @@ export const Navbar = () => {
             <span className="text-sm text-muted-foreground">
               {profile?.full_name || profile?.email}
             </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setChangePasswordOpen(true)}
+            >
+              <Key className="h-4 w-4 mr-2" />
+              Mudar Senha
+            </Button>
             <Button variant="outline" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Sair
@@ -50,6 +61,11 @@ export const Navbar = () => {
           </div>
         </div>
       </div>
+
+      <ChangePasswordDialog
+        open={changePasswordOpen}
+        onOpenChange={setChangePasswordOpen}
+      />
     </nav>
   );
 };

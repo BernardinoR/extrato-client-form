@@ -125,7 +125,7 @@ const Auth = () => {
     } else {
       toast({
         title: 'Sucesso',
-        description: 'Conta criada com sucesso! Verifique seu email para confirmar.',
+        description: 'Conta criada com sucesso! Você já pode fazer login.',
       });
       setSignupData({ fullName: '', email: '', password: '', confirmPassword: '' });
     }

@@ -6,9 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Shield, ShieldOff } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Shield, ShieldOff, UserPlus, Trash2, Users, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CreateUserDialog } from '@/components/CreateUserDialog';
+import { DeleteUserDialog } from '@/components/DeleteUserDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserData {
   id: string;
@@ -21,7 +25,12 @@ interface UserData {
 const UserManagement = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     fetchUsers();
@@ -106,6 +115,23 @@ const UserManagement = () => {
     }
   };
 
+  const handleDeleteClick = (user: UserData) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const filteredUsers = users.filter(
+    (user) =>
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalUsers = users.length;
+  const totalAdmins = users.filter((u) => u.roles.includes('admin')).length;
+  const recentUsers = users.filter(
+    (u) => new Date(u.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  ).length;
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto p-6">
@@ -126,10 +152,58 @@ const UserManagement = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Gerenciamento de Usuários</h1>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Criar Novo Usuário
+        </Button>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalUsers}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Administradores</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalAdmins}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Novos (7 dias)</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{recentUsers}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Gerenciamento de Usuários</CardTitle>
+          <CardTitle>Usuários</CardTitle>
+          <div className="mt-4">
+            <Input
+              placeholder="Buscar por nome ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -143,12 +217,18 @@ const UserManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => {
+              {filteredUsers.map((user) => {
                 const isAdmin = user.roles.includes('admin');
+                const isSelf = currentUser?.id === user.id;
                 return (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       {user.full_name || '-'}
+                      {isSelf && (
+                        <Badge variant="outline" className="ml-2">
+                          Você
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
@@ -167,23 +247,34 @@ const UserManagement = () => {
                       {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant={isAdmin ? 'destructive' : 'default'}
-                        onClick={() => toggleAdminRole(user.id, isAdmin)}
-                      >
-                        {isAdmin ? (
-                          <>
-                            <ShieldOff className="h-4 w-4 mr-2" />
-                            Remover Admin
-                          </>
-                        ) : (
-                          <>
-                            <Shield className="h-4 w-4 mr-2" />
-                            Tornar Admin
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant={isAdmin ? 'destructive' : 'default'}
+                          onClick={() => toggleAdminRole(user.id, isAdmin)}
+                          disabled={isSelf}
+                        >
+                          {isAdmin ? (
+                            <>
+                              <ShieldOff className="h-4 w-4 mr-2" />
+                              Remover Admin
+                            </>
+                          ) : (
+                            <>
+                              <Shield className="h-4 w-4 mr-2" />
+                              Tornar Admin
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteClick(user)}
+                          disabled={isSelf}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -192,6 +283,22 @@ const UserManagement = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <CreateUserDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onUserCreated={fetchUsers}
+      />
+
+      {selectedUser && (
+        <DeleteUserDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          userId={selectedUser.id}
+          userName={selectedUser.full_name || selectedUser.email}
+          onUserDeleted={fetchUsers}
+        />
+      )}
     </div>
   );
 };

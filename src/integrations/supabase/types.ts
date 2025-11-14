@@ -80,6 +80,7 @@ export type Database = {
           nomeConta: string | null
           Posicao: number | null
           Rendimento: number | null
+          rentabilidade_validada: boolean | null
           Taxa: string | null
           Vencimento: string | null
         }
@@ -97,6 +98,7 @@ export type Database = {
           nomeConta?: string | null
           Posicao?: number | null
           Rendimento?: number | null
+          rentabilidade_validada?: boolean | null
           Taxa?: string | null
           Vencimento?: string | null
         }
@@ -114,10 +116,67 @@ export type Database = {
           nomeConta?: string | null
           Posicao?: number | null
           Rendimento?: number | null
+          rentabilidade_validada?: boolean | null
           Taxa?: string | null
           Vencimento?: string | null
         }
         Relationships: []
+      }
+      extrato_status_log: {
+        Row: {
+          cliente: string
+          competencia: string
+          created_at: string | null
+          detalhes: Json | null
+          id: string
+          instituicao: string
+          ip_origem: string | null
+          mensagem: string | null
+          sistema_origem: string | null
+          status: string
+          submission_id: string | null
+          tipo_extrato: string | null
+          webhook_timestamp: string | null
+        }
+        Insert: {
+          cliente: string
+          competencia: string
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          instituicao: string
+          ip_origem?: string | null
+          mensagem?: string | null
+          sistema_origem?: string | null
+          status: string
+          submission_id?: string | null
+          tipo_extrato?: string | null
+          webhook_timestamp?: string | null
+        }
+        Update: {
+          cliente?: string
+          competencia?: string
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          instituicao?: string
+          ip_origem?: string | null
+          mensagem?: string | null
+          sistema_origem?: string | null
+          status?: string
+          submission_id?: string | null
+          tipo_extrato?: string | null
+          webhook_timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extrato_status_log_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       institutions: {
         Row: {
@@ -301,6 +360,8 @@ export type Database = {
           nome_conta: string | null
           status: string | null
           tipos: Json
+          ultimo_status: string | null
+          ultimo_status_at: string | null
           user_id: string
           webhook_response: Json | null
         }
@@ -314,6 +375,8 @@ export type Database = {
           nome_conta?: string | null
           status?: string | null
           tipos: Json
+          ultimo_status?: string | null
+          ultimo_status_at?: string | null
           user_id: string
           webhook_response?: Json | null
         }
@@ -327,6 +390,8 @@ export type Database = {
           nome_conta?: string | null
           status?: string | null
           tipos?: Json
+          ultimo_status?: string | null
+          ultimo_status_at?: string | null
           user_id?: string
           webhook_response?: Json | null
         }
@@ -400,6 +465,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_extrato_logs: { Args: never; Returns: undefined }
       get_unique_clients: {
         Args: never
         Returns: {
